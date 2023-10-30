@@ -1,5 +1,4 @@
 function [f] = PlotPrintSequence(seq, Nnails, Rplate)
-% Nnails = 20; Rplate = 0.1; seq = randi(Nnails, [3*Nnails, 1]);
 %PLOTPRINTSEQUENCE Plots string art given sequence
 nailIdx = 1:Nnails;
 nailAng = linspace(0, 2*pi, Nnails).';
