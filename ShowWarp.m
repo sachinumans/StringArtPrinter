@@ -1,7 +1,7 @@
 clc; close all; clear
  
 Rplate = 0.2; % Plate radius
-Nnails = 300; %round(2*pi*Rplate/0.01); % Number of nails
+Nnails = 100; %round(2*pi*Rplate/0.01); % Number of nails
 Nnails = Nnails - mod(Nnails, 8) + 4; % Make divisible by 4 and undivisible by 8
 
 imgPath = [pwd '\TestImages\Gunter_cropped.png']; % Image location
@@ -57,7 +57,7 @@ title("Warped nails")
 
 %% Plot some random strings
 % conns = randi(Nnails, [2, 5]); % Connections
-conns = round(linspace(1, Nnails, min(30, Nnails))); conns(2,:) = 1; % Connections
+conns = round(linspace(1, Nnails, min(Nnails, Nnails))); conns(2,:) = 1; % Connections
 imgWarpedCenter = [size(warpedImage, 2)/2, size(warpedImage, 1)/2];
 
 figure(f1);
