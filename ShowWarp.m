@@ -1,5 +1,5 @@
 clc; close all; clear
- 
+
 Rplate = 0.2; % Plate radius
 Nnails = 100; %round(2*pi*Rplate/0.01); % Number of nails
 Nnails = Nnails - mod(Nnails, 8) + 4; % Make divisible by 4 and undivisible by 8
@@ -53,7 +53,7 @@ title("Warped nails")
 
 %% Get warped image
 
-[warpedImage, f2] = ImageWarp(img, warpFactor, Rplate, nailCoorsWarped, 0); % Get warped downsampled image
+[warpedImage, f2] = ImageWarp(img, warpFactor, Rplate, nailCoorsWarped, true); % Get warped downsampled image
 
 %% Plot some random strings
 % conns = randi(Nnails, [2, 5]); % Connections
@@ -78,3 +78,31 @@ for c = conns
 end
 axis("tight")
 title("Warped image with exemplary strings")
+
+%% Exemplary input mask
+exampleConns = [26; 76];
+stringX = linspace(nailCoors(exampleConns(1), 1), nailCoors(exampleConns(2), 1), 200);
+stringY = linspace(nailCoors(exampleConns(1), 2), nailCoors(exampleConns(2), 2), 200);
+
+stringAng = atan(stringY./stringX);
+stringWarpFactor = warpFactor(stringAng);
+stringWarpedX = stringX.*stringWarpFactor;
+stringWarpedY = stringY.*stringWarpFactor;
+stringImgWarpedX = stringWarpedX*imgWarpedCenter(1)/Rplate + imgWarpedCenter(1)+.5;
+stringImgWarpedY = stringWarpedY*imgWarpedCenter(2)/Rplate + imgWarpedCenter(2)+.5;
+
+stringImgWarpedX_discrete = round(stringImgWarpedX(2:end-1));
+stringImgWarpedY_discrete = round(stringImgWarpedY(2:end-1));
+% plot(stringImgWarpedX_discrete, stringImgWarpedY_discrete, 'ro')
+
+[pixelIntensity, pixelPosition] = groupcounts([stringImgWarpedX_discrete;stringImgWarpedY_discrete]');
+
+pixelIntensity = pixelIntensity./max(pixelIntensity) * 255 * 0.4; % Normalise
+pixelIntensity = 255 - pixelIntensity; % Invert
+
+exampleMask = ones(size(warpedImage))*255;
+pixelIdx = sub2ind(size(exampleMask), pixelPosition{1,2},pixelPosition{1,1});
+exampleMask(pixelIdx) = pixelIntensity;
+
+figure()
+imshow(exampleMask, [0 255]);
