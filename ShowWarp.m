@@ -21,7 +21,8 @@ nailAng = linspace(0, (2*pi - 2*pi/Nnails), Nnails).'; % Nail angles wrt center
 nailCoors = [Rplate*cos(nailAng) Rplate*sin(nailAng)]; % XY nail world coordinates
 
 %% Show unwarped figure = Ideal end product
-[img,map,alpha] = imread(imgPath); % Read image
+[img,map] = imread(imgPath); % Read image
+
 if size(img, 1) ~= size(img,2)
     error("Image is not square")
 end
@@ -31,7 +32,7 @@ imgNailCoors = [imgCenter(1)*cos(nailAng) + imgCenter(1) imgCenter(2)*sin(nailAn
 
 f1 = figure(WindowState="maximized");
 ax(1) = subplot(1, 3, 1);
-imshow(img); hold on
+imshow(img,[]); hold on
 plot(imgNailCoors(:,1), imgNailCoors(:,2), 'bo');
 axis("tight")
 title("Original image")
