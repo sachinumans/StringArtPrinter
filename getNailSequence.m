@@ -1,37 +1,40 @@
-function nailSequence = getNailSequence(targetImg)
+% function nailSequence = getNailSequence(targetImg,inputMasks)
+
+targetImg = warpedImage;
 
 currentNail = 1; % Starts from nail #1
 tolMSE = 1e-1;
 maxSteps = 1e2;
+nNails = length(inputMasks);
 
 stringImg = 255*ones(size(targetImg)); % Full white initial image
 minErr = inf;
-nailSequence = currentNail;
+nailSequence = [];
 nSteps = 0;
 
 while minErr > tolMSE && nSteps <= maxSteps
-    %TBD logic of retrieving/building masks on the spot
-    masks = getMasks(currentNail); 
-    nMasks = length(masks);
+    masksCurrentNail = inputMasks(currentNail,:);
+    errs = zeros(nNails,1);
 
-    errs = zeros(nMasks,1);
-
-    for idxMask=1:nMasks
-         % Assumes indexing in masks is relative to currentNail, e.g when 
-         % currentNail = 5, masks(1,:,:) refers to the mask from nail 5 to 
-         % nail 6
-        tempImg = stringImg - masks(idxMask,:,:); 
-        errs(idxMask) = immse(tempImg,targetImg); % mean-squared error
+    for idxMask=1:nNails
+        if idxMask ~= currentNail
+            tempImg = stringImg - cell2mat(masksCurrentNail(idxMask));
+            errs(idxMask) = immse(tempImg,targetImg); % mean-squared error
+        else
+            errs(idxMask) = inf;
+        end
     end
 
     [minErr, idxMinErr] = min(errs);
-    stringImg = stringImg - masks(idxMinErr,:,:);
-    
-    nextNail = mod(currentNail,nMasks+1) + idxMinErr; % Rounds back to nail 1 when it reaches the last nail
+    stringImg = stringImg - cell2mat(masksCurrentNail(idxMinErr));
+
+    nextNail = idxMinErr; 
     nailSequence = [nailSequence nextNail]; %#ok<AGROW>
     currentNail = nextNail;
-    
+
     nSteps = nSteps + 1;
 end
 
-end
+imshow(stringImg,[])
+
+% end
