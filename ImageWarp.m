@@ -36,27 +36,22 @@ colorWindow = [0 255];
 
 f = figure(WindowState="maximized");
 ax(1) = subplot(1, 3, 1);
+colorWindow = colorRoughlyUsed(2:end-1) + ... Color bins
+        [(colorRoughlyUsed(1:end-2)-colorRoughlyUsed(2:end-1))/2,  (colorRoughlyUsed(3:end)-colorRoughlyUsed(2:end-1))/2];
+
 for colorIdx = 2:length(colorRoughlyUsed)-1
-    colorWindow = colorRoughlyUsed(colorIdx) + ... Color bin
-        [(colorRoughlyUsed(colorIdx-1)-colorRoughlyUsed(colorIdx))/2,  (colorRoughlyUsed(colorIdx+1)-colorRoughlyUsed(colorIdx))/2];
-    pixelIdx = find(imgDouble >= colorWindow(1) & imgDouble <= colorWindow(2)); % Pixels of color within bin
-    imgWarpedReduced{1, colorIdx} = pixelIdx;
-    imgWarpedReduced{2, colorIdx} = colorRoughlyUsed(colorIdx);
+    pixelIdx = find(imgDouble >= colorWindow(colorIdx-1, 1) & imgDouble <= colorWindow(colorIdx-1, 2)); % Pixels of color within bin
     plot(pixelOriginsWarpedY(pixelIdx), -pixelOriginsWarpedX(pixelIdx), '.', Color=[1 1 1].*colorRoughlyUsed(colorIdx)/255, MarkerSize=1); hold on
 end
 
 % Fix white
-colorWindow = [colorWindow(2), 255];
+colorWindow = [colorRoughlyUsed(end-1) + (colorRoughlyUsed(end)-colorRoughlyUsed(end-1))/2, 255];
 pixelIdx = find(imgDouble >= colorWindow(1) & imgDouble <= colorWindow(2));
 plot(pixelOriginsWarpedY(pixelIdx), -pixelOriginsWarpedX(pixelIdx), '.', Color=[1 1 1], MarkerSize=1); hold on
-imgWarpedReduced{1, end} = pixelIdx;
-imgWarpedReduced{2, end} = colorRoughlyUsed(end);
 % Fix black
 colorWindow = [0,  colorRoughlyUsed(1)/2];
 pixelIdx = find(imgDouble >= colorWindow(1) & imgDouble <= colorWindow(2));
 plot(pixelOriginsWarpedY(pixelIdx), -pixelOriginsWarpedX(pixelIdx), '.', Color=[1 1 1].*colorRoughlyUsed(1)/255, MarkerSize=1); hold on
-imgWarpedReduced{1, 1} = pixelIdx;
-imgWarpedReduced{2, 1} = colorRoughlyUsed(1);
 
 rectangle(Position=[-Rplate -Rplate 2*Rplate 2*Rplate], EdgeColor='r')
 axis("equal")

@@ -56,8 +56,8 @@ title("Warped nails")
 [warpedImage, f2] = ImageWarp(img, warpFactor, Rplate, nailCoorsWarped, true); % Get warped downsampled image
 
 %% Plot some random strings
-% conns = randi(Nnails, [2, 5]); % Connections
-conns = round(linspace(1, Nnails, min(Nnails, Nnails))); conns(2,:) = 1; % Connections
+conns = randi(Nnails, [2, 5]); % Connections
+% conns = round(linspace(1, Nnails, min(Nnails, Nnails))); conns(2,:) = 1; % Connections
 imgWarpedCenter = [size(warpedImage, 2)/2, size(warpedImage, 1)/2];
 
 figure(f1);
@@ -80,7 +80,7 @@ axis("tight")
 title("Warped image with exemplary strings")
 
 %% Exemplary input mask
-exampleConns = [26; 76];
+exampleConns = [3; 7];
 stringX = linspace(nailCoors(exampleConns(1), 1), nailCoors(exampleConns(2), 1), 200);
 stringY = linspace(nailCoors(exampleConns(1), 2), nailCoors(exampleConns(2), 2), 200);
 
@@ -104,5 +104,87 @@ exampleMask = ones(size(warpedImage))*255;
 pixelIdx = sub2ind(size(exampleMask), pixelPosition{1,2},pixelPosition{1,1});
 exampleMask(pixelIdx) = pixelIntensity;
 
-figure()
-imshow(exampleMask, [0 255]);
+% figure()
+% imshow(exampleMask, [0 255]);
+
+%% Get all input masks
+inputMasks = cell(Nnails, Nnails);
+
+% loop through first octant of nails and collect all possible masks
+for nStart = 1:(Nnails/8 + 1) % Start nail
+    for nEnd = nStart:Nnails % Destination nail
+        if nStart == nEnd; continue; end % Can't move to itself
+        if ~isempty(inputMasks{nEnd, nStart}) % Exploit symmetry
+            inputMasks{nStart, nEnd} = inputMasks{nEnd, nStart};
+            continue;
+        end
+
+        % Unwarped strings
+        stringX = linspace(nailCoors(nStart, 1), nailCoors(nEnd, 1), 200);
+        stringY = linspace(nailCoors(nStart, 2), nailCoors(nEnd, 2), 200);
+
+        % Warped strings
+        stringAng = atan(stringY./stringX);
+        stringWarpFactor = warpFactor(stringAng);
+        stringWarpedX = stringX.*stringWarpFactor;
+        stringWarpedY = stringY.*stringWarpFactor;
+        stringImgWarpedX = stringWarpedX*imgWarpedCenter(1)/Rplate + imgWarpedCenter(1)+.5; % Image coordinates
+        stringImgWarpedY = -stringWarpedY*imgWarpedCenter(2)/Rplate + imgWarpedCenter(2)+.5;
+
+        stringImgWarpedX_discrete = round(stringImgWarpedX(2:end-1)); % Discretise to pixels
+        stringImgWarpedY_discrete = round(stringImgWarpedY(2:end-1));
+
+        [pixelIntensity, pixelPosition] = groupcounts([stringImgWarpedX_discrete;stringImgWarpedY_discrete]'); % Determine pixel darkness
+
+        pixelIntensity = pixelIntensity./max(pixelIntensity) * 255 * 0.4; % Normalise
+        pixelIntensity = 255 - pixelIntensity; % Invert
+
+        inputMasks{nStart, nEnd} = ones(size(warpedImage))*255; % White image
+        pixelIdx = sub2ind(size(inputMasks{nStart, nEnd}), pixelPosition{1,2},pixelPosition{1,1}); % Get linear indices of darkend pixels
+        inputMasks{nStart, nEnd}(pixelIdx) = pixelIntensity; % Darken pixels
+    end
+end
+
+% Loop through next octant and flip base masks
+endOfOctant1 = nStart;
+endOfOctant2 = endOfOctant1*2 - 1;
+endOfOctant5 = (endOfOctant1)*5 - 2;
+
+for nStart = 1:(Nnails/8 + 1)
+    for nEnd = nStart:Nnails
+        if nStart == nEnd; continue; end
+        targetmask(1) = endOfOctant1 + 1 + (endOfOctant1 - nStart);
+        targetmask(2) = mod(endOfOctant5 - (nEnd - (endOfOctant5 + 1)), Nnails);
+        targetmask(targetmask==0) = Nnails;
+
+        if ~isempty(inputMasks{nStart, nEnd})
+            inputMasks{targetmask(1), targetmask(2)} = transpose(rot90(inputMasks{nStart, nEnd}, 2));
+        else
+            error("Unmasked but symmetrically derivable string found");
+        end
+    end
+end
+
+% Loop through everything and fill it
+for nStart = 1:Nnails
+    for nEnd = 1:Nnails
+        if ~isempty(inputMasks{nStart, nEnd}); continue; end % If already filled
+        if nStart == nEnd; continue; end % Can't move to itself
+        if ~isempty(inputMasks{nEnd, nStart}) % Exploit symmetry
+            inputMasks{nStart, nEnd} = inputMasks{nEnd, nStart};
+            continue;
+        end
+
+        basemask(1) = mod(min(nStart, nEnd), endOfOctant2); % First quadrant symmetry point
+        if basemask(1) == 0; basemask(1) = endOfOctant2; end % Loop back to end of quadrant
+
+        basemask(2) = basemask(1) + abs(nEnd - nStart);
+        if ~isempty(inputMasks{basemask(1), basemask(2)}) % Copy and rotate symmetry image
+            inputMasks{nStart, nEnd} = rot90(inputMasks{basemask(1), basemask(2)}, floor(min(nStart, nEnd) /endOfOctant2));
+        elseif ~isempty(inputMasks{basemask(2), basemask(1)})
+            inputMasks{nStart, nEnd} = rot90(inputMasks{basemask(2), basemask(1)}, floor(min(nStart, nEnd) /endOfOctant2));
+        else
+            error("Unmasked but symmetrically derivable string found");
+        end
+    end
+end
