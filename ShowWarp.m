@@ -1,12 +1,13 @@
 clc; close all; clear
 
-Rplate = 0.2; % Plate radius
-Nnails = 100; %round(2*pi*Rplate/0.01); % Number of nails
+Rplate = 0.8; % Plate radius
+Nnails = 400; %round(2*pi*Rplate/0.01); % Number of nails
 Nnails = Nnails - mod(Nnails, 8) + 4; % Make divisible by 4 and undivisible by 8
 
-imgPath = [pwd '\TestImages\Gunter_cropped.png']; % Image location
+% imgPath = [pwd '\TestImages\Gunter_cropped.png']; % Image location
 % imgPath = [pwd '\TestImages\Diamonds.png'];
 % imgPath = [pwd '\TestImages\BlackSquare.png'];
+imgPath = [pwd '\TestImages\BlackCircle.png'];
 
 %% Get nail coordinates
 if mod(Nnails, 4) ~= 0
@@ -22,6 +23,7 @@ nailCoors = [Rplate*cos(nailAng) Rplate*sin(nailAng)]; % XY nail world coordinat
 
 %% Show unwarped figure = Ideal end product
 [img,map] = imread(imgPath); % Read image
+img = 255 - img;
 
 if size(img, 1) ~= size(img,2)
     error("Image is not square")
@@ -97,7 +99,7 @@ stringImgWarpedY_discrete = round(stringImgWarpedY(2:end-1));
 
 [pixelIntensity, pixelPosition] = groupcounts([stringImgWarpedX_discrete;stringImgWarpedY_discrete]');
 
-pixelIntensity = pixelIntensity./max(pixelIntensity) * 255 * 0.4; % Normalise
+pixelIntensity = pixelIntensity./max(pixelIntensity) * 255; % Normalise
 pixelIntensity = 255 - pixelIntensity; % Invert
 
 exampleMask = ones(size(warpedImage))*255;
@@ -136,7 +138,7 @@ for nStart = 1:(Nnails/8 + 1) % Start nail
 
         [pixelIntensity, pixelPosition] = groupcounts([stringImgWarpedX_discrete;stringImgWarpedY_discrete]'); % Determine pixel darkness
 
-        pixelIntensity = pixelIntensity./max(pixelIntensity) * 255 * 0.4; % Normalise
+        pixelIntensity = pixelIntensity./max(pixelIntensity) * 255 * 0.01; % Normalise
         pixelIntensity = 255 - pixelIntensity; % Invert
 
         inputMasks{nStart, nEnd} = ones(size(warpedImage))*255; % White image
